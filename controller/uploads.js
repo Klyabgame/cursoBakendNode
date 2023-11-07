@@ -10,12 +10,7 @@ const cargarArchivos=async(req,res=response)=>{
   //Object.keys(req.files) ::: se usa para retornar un array de cadenas con los nombres de los objetos. example: bolso:{nombre:cartera,descripcion:grande} ====retorna
   // ['nombre','descripcion'] array de cadenas 
   
-    if (!req.files || Object.keys(req.files).length === 0 || !req.files.archivo) {
-      res.status(400).json({
-        msg:'no se encontro el archivo'
-      });
-      return;
-    }
+
   
     try {
 
