@@ -1,6 +1,8 @@
 
 const path=require('path');
 const fs=require('fs');
+const cloudinary = require('cloudinary').v2
+cloudinary.config(process.env.CLOUDINARY_URL);
 const { response } = require("express");
 const { subirArchivo } = require("../helpers/subir-archivo");
 const Usuario = require("../models/usuario");
@@ -87,6 +89,69 @@ const actualizarArchivos=async(req,res=response)=>{
 
 }
 
+
+const actualizarArchivosCloudinary=async(req,res=response)=>{
+
+  const{id, coleccion}=req.params
+
+
+  let modelo;
+
+  switch (coleccion) {
+    case 'usuarios':
+      modelo= await Usuario.findById(id);
+      if (!modelo) {
+        return res.status(400).json({
+          msg:`no existe usuario con el id ${id}`
+        })
+      }
+      break;
+
+    case 'productos':
+        modelo= await Producto.findById(id);
+        if (!modelo) {
+          return res.status(400).json({
+            msg:`no existe producto con el id ${id}`
+          })
+        }
+      break;
+  
+    default:
+      return res.status(500).json({
+        msg: 'se me olvido validar esto'
+      })
+  }
+
+  //limpiar imagenes previas
+
+  if (modelo.img) {
+    //borrar la imagen del servidor
+    const nombreArr=modelo.img.split('/');
+    const nombre=nombreArr[nombreArr.length - 1];
+    const [img_id]=nombre.split('.');
+    cloudinary.uploader.destroy(img_id);
+
+  }
+
+  
+  const {tempFilePath}= req.files.archivo;
+  const {secure_url}=await cloudinary.uploader.upload(tempFilePath);
+
+  modelo.img=secure_url;
+
+  await modelo.save();
+
+
+  res.json({
+    mod:modelo
+  })
+
+
+
+
+}
+
+
 const mostrarImagen=async(req,res=response)=>{
 
   const{id, coleccion}=req.params
@@ -130,12 +195,8 @@ const mostrarImagen=async(req,res=response)=>{
 
   }
 
-
-
-
-  res.json({
-    msg:'falta place holder'
-  })
+    const pathImagen=path.join(__dirname,'../assets/no-image.jpg');
+    res.sendFile(pathImagen);
 
 
 
@@ -144,6 +205,6 @@ const mostrarImagen=async(req,res=response)=>{
 
 module.exports={
     cargarArchivos,
-    actualizarArchivos,
+    actualizarArchivosCloudinary,
     mostrarImagen
 }
